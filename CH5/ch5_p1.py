@@ -51,35 +51,40 @@ def parser():
         print('pass')
     
 def S():
-    if (token == 'a'):
+    # Only 1 <S> production
+    if (token in ['a', 'b', 'c']):
         A()
         B()
         C()
-    elif (token == 'b'):
-        B()
-        C()
-    elif (token == 'c'):
-        C()
-    elif (token == ''):
-        pass
     else:
         raise RuntimeError('Expecting a, b, or c')
 
 def A():
-    if (token == 'a' or token == ''):
+    # 1st production
+    if (token == 'a'):
         advance()
+    
+    # 2nd production that is lambda, therefore
+    # the current token is already on the next 
+    # production's token
+    elif (token in ['b', 'c', '']):
+        pass
     else: 
         raise RuntimeError('Expecting a or lambda')
 
 def B():
-    if (token == 'b' or token == ''):
+    if (token == 'b'):
         advance()
+    elif (token in ['c', '']):
+        pass
     else:
         raise RuntimeError('Expecting b or lambda')
 
 def C():
-    if (token == 'c' or token == ''):
+    if (token == 'c'):
         advance()
+    elif (token == ''):
+        pass
     else:
         raise RuntimeError('Expecting c or lambda')
 
