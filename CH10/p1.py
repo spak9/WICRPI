@@ -288,9 +288,10 @@ def expr():
         # consume wastes another check, just advance()
         advance()
         term()  # pushes value of term on top of stack
-        rightoperand = operandstack.pop()
-        leftoperand = operandstack.pop()
-        operandstack.append(leftoperand + rightoperand)
+        
+        # when our 2nd term returns, we'll need to add both <term>'s
+        co_code.append(BINARY_ADD)
+
         # when term() returns, if it sees another +
         # in the token stream, it will loop again
         
@@ -304,9 +305,8 @@ def term():
         advance()
         sign = 1    # initialize sign before every factor call because it's the only production with MINUS
         factor()
-        rightoperand = operandstack.pop()
-        leftoperand = operandstack.pop()
-        operandstack.append(leftoperand * rightoperand)
+        # after our 2nd factor returns, we need to multiply the two factors
+        co_code.append(BINARY_MULTIPLY)
 
 # <factor> -> '+' <factor> | '-' <factor> | UNSIGNEDINT | NAME | '(' <expr> ')'
 def factor():
@@ -319,9 +319,23 @@ def factor():
         sign = -sign 
         advance()
         factor()
+
+    # UNSIGNED_INT needs to save our const within co_consts
+    # and append the appropriate bytecode instructions
     elif (token.category == UNSIGNEDINT):
-        operandstack.append(sign * int(token.lexeme))
+        val = sign * int(token.lexeme)      # get our value
+        # don't waste space and have multiple copies; just use the same instance
+        if val in co_consts:
+            index = co_consts.index(val)
+        else:
+            # first time seeing the constant
+            index = len(co_consts)
+            co_consts.append(val)
+        # generate bytecode; LOAD_CONST & consti
+        co_code.append(LOAD_CONST)
+        co_code.append(index)_
         advance()
+
     elif (token.category == NAME):
         if (token.lexeme in symtab):
             operandstack.append(sign * symtab[token.lexeme])
