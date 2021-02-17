@@ -109,6 +109,7 @@ def main():
     try:
         tokenizer()
         parser()
+        print('Nice! Seems like everything was parsed!')
 
    # on an error, display an error message
    # token is the token object on which the error was detected
@@ -203,9 +204,9 @@ def getchar():
    else:
       return c             # return character to tokenizer()
 
-####################
-# Simple Parser    #
-####################
+################################
+#   Simple Parser/Generator    #
+################################
 
 # begin the parser, starting with the 1st token in tokenlist
 def parser():
@@ -308,7 +309,7 @@ def term():
         # after our 2nd factor returns, we need to multiply the two factors
         co_code.append(BINARY_MULTIPLY)
 
-# <factor> -> '+' <factor> | '-' <factor> | UNSIGNEDINT | NAME | '(' <expr> ')'
+# <factor> -> '+' <factor> | '-' <factor> | UNSIGNED_INT | NAME | '(' <expr> ')'
 def factor():
     global sign
     # a lot of cases, all disjoint
@@ -333,33 +334,42 @@ def factor():
             co_consts.append(val)
         # generate bytecode; LOAD_CONST & consti
         co_code.append(LOAD_CONST)
-        co_code.append(index)_
+        co_code.append(index)
         advance()
-
+    
+    # NAME needs to generate LOAD_NAME after checking whether name
+    # exists within co_names 
     elif (token.category == NAME):
-        if (token.lexeme in symtab):
-            operandstack.append(sign * symtab[token.lexeme])
+        # check if name has been declared
+        if token.lexeme in co_names:
+            index = co_names.index(token.lexeme)
         else: 
             raise RuntimeError(f'Name: {token.lexeme} is not defined')
+        # generate code
+        co_code.append(LOAD_NAME)
+        co_code.append(index)
+        # check if we're a negative op
+        if sign == -1:
+            co_code.append(UNARY_NEGATIVE)
         advance()
+
+   
     elif (token.category == LEFTPAREN):
         advance()
-        # need to save sign because expr() will cause global one to change
+        # expr() will call term() which restarts our global sign of negation; have a local
+        # copy our this function call's negative state
         savesign = sign
         expr()
-        # if our current factor() call's sign was negative, then make our expression negative
         if savesign == -1:
-            operandstack[-1] = -operandstack[-1]
+            co_code.append(UNARY_NEGATIVE)
         consume(RIGHTPAREN)
+
     else: 
         raise RuntimeError('Expecting a factor')
 
 
 
 
+# Call main()
 
 main()
-if grade:
-   # display interpreter source code
-   print('------------------------------------------- ' + sys.argv[0])
-   print(open(sys.argv[0]).read())

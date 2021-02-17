@@ -17,7 +17,7 @@ class Token:
 
 # globals grade
 trace = True        # controls token trace
-grade = False
+grade = False 
 source = ''          # receives entire source program
 sourceindex = 0      # index into the source code in source
 line = 0             # current line number
