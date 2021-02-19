@@ -61,6 +61,8 @@ ERROR         = 11   # if not any of the above, then error
 UNARY_NEGATIVE =    11
 BINARY_MULTIPLY =   20
 BINARY_ADD =        23
+PRINT_EXPR =        70
+# be wary of 71 & 72
 PRINT_ITEM =        71
 PRINT_NEWLINE =     72
 STORE_NAME =        90
@@ -222,6 +224,7 @@ def advance():
     if (tokenindex >= len(tokenlist)): # reached the end
         raise RuntimeError('Unexpected EOF')
     token = tokenlist[tokenindex]
+    print(f'Current Token: {token.lexeme}, Cat: {token.category} ')
 
 # major function 2: consume()
 def consume(expectedcat):
@@ -236,7 +239,7 @@ def program():
     # although stated, note that semantically, this means 
     # that a program consists of 0 or more statements that 
     # all begin with some 'NAME' or 'PRINT' token
-    while (token.category in [NAME, PRINT]): 
+    while (token.category in [NAME, PRINT,]): 
         stmt()
     if (token.category != EOF):
         raise RuntimeError('Expecting EOF')
@@ -263,22 +266,37 @@ def simplestmt():
 
 # <assignmentstmt> -> NAME '=' <expr>
 def assignmentstmt():
-    left = token.lexeme     # will be the key into the symbol table 
-    consume(NAME)
+    # check if NAME exists in program 
+    if token.lexeme in co_names:
+        index = co_names.index(token.lexeme)
+    
+    # first time seeing the variable
+    else:
+        index = len(co_names)
+        co_names.append(token.lexeme)
+    
+    advance()
     consume(ASSIGNOP)
-    expr()
+    expr() # will push expr() value
 
-    # after expr() returns, it will have pushed <expr>'s value
-    # to the top
-    symtab[left] = operandstack.pop()
+    # generate bytecode - STORE_NAME
+    co_code.append(STORE_NAME)  # pops TOS and stores in co_values[index]
+    co_code.append(index)
+
+
+
 
 # <printstmt> -> 'print' '(' <expr> ')'
 def printstmt():
-    consume(PRINT)
+    advance()
     consume(LEFTPAREN)
-    # expr() will have pushed on its value
+    # expr() will generate its bytecode and push it's 'value'
     expr()
-    print(operandstack.pop())
+
+    # printstmt() needs to pop the value from expr() and print it
+    # note: book says use PRINT_ITEM & PRINT_NEWLINE, but we're 
+    # going to try to keep up to date: use PRINT_EXPR (70 dec)
+    co_code.append(PRINT_EXPR)
     consume(RIGHTPAREN)
 
 # <expr> -> <term> ('+' <term>)*
@@ -360,7 +378,7 @@ def factor():
         # copy our this function call's negative state
         savesign = sign
         expr()
-        if savesign == -1:
+        if savesign == -1: # note that this 'savesign' refers to outside <expr>, not inside
             co_code.append(UNARY_NEGATIVE)
         consume(RIGHTPAREN)
 
