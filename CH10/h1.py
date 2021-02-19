@@ -224,7 +224,7 @@ def advance():
     if (tokenindex >= len(tokenlist)): # reached the end
         raise RuntimeError('Unexpected EOF')
     token = tokenlist[tokenindex]
-    print(f'Current Token: {token.lexeme}, Cat: {token.category} ')
+    # print(f'Current Token: {token.lexeme}, Cat: {token.category} ')
 
 # major function 2: consume()
 def consume(expectedcat):
