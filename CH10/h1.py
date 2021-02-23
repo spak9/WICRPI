@@ -112,6 +112,7 @@ def main():
         tokenizer()
         parser()
         print('Nice! Seems like everything was parsed!')
+        interpreter()
 
    # on an error, display an error message
    # token is the token object on which the error was detected
@@ -284,8 +285,6 @@ def assignmentstmt():
     co_code.append(index)
 
 
-
-
 # <printstmt> -> 'print' '(' <expr> ')'
 def printstmt():
     advance()
@@ -386,7 +385,59 @@ def factor():
         raise RuntimeError('Expecting a factor')
 
 
+###################
+# The interpreter #
+###################
 
+# Just going to read a bytecode instructions from co_code and
+# execute based on instruction; loop until no more or error
+# Note: As before, Python 3.6 introduced 2 byte instructions, but we're doing 1 & 2
+
+def interpreter():
+    stack = []
+    pc =0
+    co_values = [None] * len(co_names)  # values correspond to variables
+
+    while pc < len(co_code):
+        opcode = co_code[pc]    # get opcode (1 or 2 for instruction)
+        pc += 1                 # increment pc
+        
+        # 1 byte instructions 
+        if opcode == UNARY_NEGATIVE:
+            stack[-1] = -stack[-1]
+        elif opcode == BINARY_MULTIPLY:
+            operand1 = stack.pop()
+            operand2 = stack.pop()
+            stack.append(operand1 * operand2)
+        elif opcode == BINARY_ADD:
+            operand1 = stack.pop()
+            operand2 = stack.pop()
+            stack.append(operand1 + operand2)
+        # don't look into POP_TOP.. 
+        elif opcode == PRINT_EXPR:
+            print(stack.pop(), end='')
+        
+        # 2 byte instructions
+        elif opcode == STORE_NAME:
+            index = co_code[pc]      # get the index for the value
+            pc += 1
+            operand = stack.pop()
+            co_values[index] = operand   # update the table with the value
+        elif opcode == LOAD_CONST:
+            index = co_code[pc]
+            pc += 1
+            value = co_consts[index]
+            stack.append(value)
+        elif opcode == LOAD_NAME:
+            index = co_code[pc]
+            pc += 1
+            value = co_values[index] # get the index of variable
+            if value == None:
+                print(f'No value for {co_names[index]}')
+                sys.exit(1)
+            stack.append(value)
+        else:
+            break
 
 # Call main()
 
