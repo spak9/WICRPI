@@ -397,11 +397,12 @@ def interpreter():
     stack = []
     pc =0
     co_values = [None] * len(co_names)  # values correspond to variables
+    # print(f'co_code: {co_code}')
 
     while pc < len(co_code):
         opcode = co_code[pc]    # get opcode (1 or 2 for instruction)
         pc += 1                 # increment pc
-        
+        #   print(f'Loop Count: {pc}') 
         # 1 byte instructions 
         if opcode == UNARY_NEGATIVE:
             stack[-1] = -stack[-1]
